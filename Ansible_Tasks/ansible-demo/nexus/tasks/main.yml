@@ -52,12 +52,14 @@
     path: '{{ pwd.stdout }}/{{ dir_name }}/nexus'
     owner: nexus
     group: nexus
+    recurse: true
 
 - name: Change the ownership of nexus data directory
   file:
     path: '{{ pwd.stdout }}/{{ dir_name }}/sonatype-work'
     owner: nexus
     group: nexus
+    recurse: true
 
 - name: Uncomment run_as_user parameter
   replace:
