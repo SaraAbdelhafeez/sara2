@@ -1,0 +1,87 @@
+---
+# tasks file for nexus
+- name: pwd
+  command: pwd
+  register: pwd
+
+- name: update the yum packages
+  yum:
+    name: '*' 
+    state: latest
+  when: ansible_facts["os_family"]=="RedHat"
+
+- name: install wget
+  yum:
+    name: 'wget' 
+    state: installed
+
+- name: Install OpenJDK 1.8
+  yum:
+    name: 'java-1.8.0-openjdk.x86_64'
+    state: present
+
+- name: Create a directory named app
+  file:
+    path: "{{ dir_name }}"
+    state: directory  
+
+
+ 
+
+- name: Download the latest nexus
+  get_url:
+    url: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+    dest: '{{ pwd.stdout }}/{{ dir_name }}/nexus.tar.gz'
+
+- name: Untar the downloaded file
+  unarchive:
+    src: '{{ pwd.stdout }}/{{ dir_name }}/nexus.tar.gz'
+    dest: '{{ pwd.stdout }}/{{ dir_name }}'
+    remote_src: true 
+
+- name: Rename the untared file to nexus
+  command: mv {{ pwd.stdout }}/{{ dir_name }}/nexus-3.47.0-01 {{ pwd.stdout }}/{{ dir_name }}/nexus
+
+- name: Add nexus as a user
+  user:
+    name: nexus
+    state: present
+
+- name: Change the ownership of nexus files
+  file:
+    path: '{{ pwd.stdout }}/{{ dir_name }}/nexus'
+    owner: nexus
+    group: nexus
+
+- name: Change the ownership of nexus data directory
+  file:
+    path: '{{ pwd.stdout }}/{{ dir_name }}/sonatype-work'
+    owner: nexus
+    group: nexus
+
+- name: Uncomment run_as_user parameter
+  replace:
+    path: '{{ pwd.stdout }}/{{ dir_name }}/nexus/bin/nexus.rc'
+    regexp: '#run_as_user=""'
+    replace: run_as_user="nexus"
+
+- name: Running Nexus as a System Service
+  template:
+    src: nexus.service
+    dest: /etc/systemd/system/nexus.service
+
+- name: Reload Systemd service configuration
+  shell: 'systemctl daemon-reload'
+
+- name: Register service with chkconfig system
+  systemd: 
+    name: nexus 
+    enabled: true
+
+
+- name: Start nexus
+  systemd:
+    name: nexus
+    state: started
+    
+    
