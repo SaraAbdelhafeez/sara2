@@ -1,8 +1,7 @@
 ---
 # tasks file for nexus
-- name: pwd
-  command: pwd
-  register: pwd
+
+
 
 - name: update the yum packages
   yum:
@@ -31,16 +30,16 @@
 - name: Download the latest nexus
   get_url:
     url: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
-    dest: '{{ pwd.stdout }}/{{ dir_name }}/nexus.tar.gz'
+    dest: "{{ dir_name }}/nexus.tar.gz"
 
 - name: Untar the downloaded file
   unarchive:
-    src: '{{ pwd.stdout }}/{{ dir_name }}/nexus.tar.gz'
-    dest: '{{ pwd.stdout }}/{{ dir_name }}'
+    src: "{{ dir_name }}/nexus.tar.gz"
+    dest: "{{ dir_name }}"
     remote_src: true 
 
 - name: Rename the untared file to nexus
-  command: mv {{ pwd.stdout }}/{{ dir_name }}/nexus-3.47.0-01 {{ pwd.stdout }}/{{ dir_name }}/nexus
+  command: mv "{{ dir_name }}/nexus-3.47.1-01" "{{ dir_name }}/nexus"
 
 - name: Add nexus as a user
   user:
@@ -49,21 +48,21 @@
 
 - name: Change the ownership of nexus files
   file:
-    path: '{{ pwd.stdout }}/{{ dir_name }}/nexus'
+    path: "{{ dir_name }}/nexus"
+    recurse: true
     owner: nexus
     group: nexus
-    recurse: true
 
 - name: Change the ownership of nexus data directory
   file:
-    path: '{{ pwd.stdout }}/{{ dir_name }}/sonatype-work'
+    path: "{{ dir_name }}/sonatype-work"
+    recurse: true
     owner: nexus
     group: nexus
-    recurse: true
 
 - name: Uncomment run_as_user parameter
   replace:
-    path: '{{ pwd.stdout }}/{{ dir_name }}/nexus/bin/nexus.rc'
+    path: "{{ dir_name }}/nexus/bin/nexus.rc"
     regexp: '#run_as_user=""'
     replace: run_as_user="nexus"
 
@@ -75,15 +74,12 @@
 - name: Reload Systemd service configuration
   shell: 'systemctl daemon-reload'
 
-- name: Register service with chkconfig system
-  systemd: 
-    name: nexus 
-    enabled: true
 
 
 - name: Start nexus
   systemd:
     name: nexus
     state: started
+    enabled: true
     
     
